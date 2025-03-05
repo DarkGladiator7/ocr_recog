@@ -1,7 +1,10 @@
 import deepl
 from langdetect import detect
+import os 
+import dotenv
 
-translator = deepl.Translator("562f9148-f183-403d-846a-6fe013a8c118:fx")
+DEEPL_API_KEY = os.getenv("DEEPL_API_KEY")
+translator = deepl.Translator(DEEPL_API_KEY)
 
 def translate_text(text):
     """Translate non-English text to English using DeepL."""
