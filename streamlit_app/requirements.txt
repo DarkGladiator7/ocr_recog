@@ -5,4 +5,4 @@ pillow
 langdetect
 deepl
 dotenv
-easyocr
+paddleocr

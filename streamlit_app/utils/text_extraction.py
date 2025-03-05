@@ -1,19 +1,20 @@
-import easyocr
+from paddleocr import PaddleOCR
 
-# Initialize EasyOCR Reader with multiple languages
-reader = easyocr.Reader(['en', 'de', 'fr', 'es'])  # English, German, French, Spanish
+# Initialize PaddleOCR
+ocr = PaddleOCR(lang="en")  # Change "en" to "en+de+fr+es" for multiple languages
 
 def extract_paragraphs_with_bounding_boxes(image):
-    """Extract paragraphs and their bounding boxes using EasyOCR."""
-    results = reader.readtext(image)  # Perform OCR
+    """Extract paragraphs and their bounding boxes using PaddleOCR."""
+    results = ocr.ocr(image, cls=True)
 
     paragraphs = []
     paragraph_text = []
     paragraph_boxes = []
     prev_y = None
 
-    for (bbox, text, _) in results:
-        (x_min, y_min), (x_max, y_max) = bbox[0], bbox[2]  # Get bounding box
+    for result in results[0]:
+        bbox, text, confidence = result
+        (x_min, y_min), (x_max, y_max) = bbox[0], bbox[2]
         w, h = x_max - x_min, y_max - y_min
 
         if prev_y is not None and (y_min - prev_y) > h * 3:
@@ -27,7 +28,7 @@ def extract_paragraphs_with_bounding_boxes(image):
             paragraph_text = []  
             paragraph_boxes = []
 
-        paragraph_text.append(text)
+        paragraph_text.append(text[0])
         paragraph_boxes.append((x_min, y_min, w, h))
         prev_y = y_min
 
