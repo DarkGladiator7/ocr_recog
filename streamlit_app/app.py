@@ -11,7 +11,6 @@ import pytesseract
 # **Modern Page Configuration**
 st.set_page_config(page_title="OCR Image Translator", layout="wide")
 
-pytesseract.pytesseract.tesseract_cmd = "/usr/bin/tesseract"
 
 # **Custom CSS for JS-like Modern UI**
 st.markdown("""

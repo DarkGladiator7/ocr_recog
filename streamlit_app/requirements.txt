@@ -1,9 +1,8 @@
 streamlit
 opencv-python-headless
-pytesseract
-tesseract
 numpy
 pillow
 langdetect
 deepl
 dotenv
+easyocr
