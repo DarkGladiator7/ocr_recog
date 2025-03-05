@@ -6,10 +6,12 @@ from utils.text_extraction import extract_paragraphs_with_bounding_boxes
 from utils.language_detection import detect_language
 from utils.text_translation import translate_text
 from utils.text_replacement import replace_text_with_translation
-
+import pytesseract
 
 # **Modern Page Configuration**
 st.set_page_config(page_title="OCR Image Translator", layout="wide")
+
+pytesseract.pytesseract.tesseract_cmd = "/usr/bin/tesseract"
 
 # **Custom CSS for JS-like Modern UI**
 st.markdown("""
