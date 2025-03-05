@@ -1,8 +1,9 @@
 import deepl
 from langdetect import detect
 import os 
-import dotenv
-
+from dotenv import load_dotenv
+load_dotenv()
+ 
 DEEPL_API_KEY = os.getenv("DEEPL_API_KEY")
 translator = deepl.Translator(DEEPL_API_KEY)
 

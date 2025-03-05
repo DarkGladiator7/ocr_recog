@@ -1,6 +1,5 @@
 import streamlit as st
 import numpy as np
-import cv2
 from PIL import Image
 from utils.image_preprocessing import preprocess_image
 from utils.text_extraction import extract_paragraphs_with_bounding_boxes

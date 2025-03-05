@@ -23,7 +23,7 @@ def extract_paragraphs_with_bounding_boxes(image):
                     y_max = max([b[1] + b[3] for b in paragraph_boxes])
                     paragraphs.append((" ".join(paragraph_text), (x_min, y_min, x_max - x_min, y_max - y_min)))
 
-                paragraph_text = []
+                paragraph_text = []  
                 paragraph_boxes = []
 
             paragraph_text.append(text)
