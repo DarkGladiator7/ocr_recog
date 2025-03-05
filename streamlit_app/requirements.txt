@@ -4,5 +4,6 @@ numpy
 pillow
 langdetect
 deepl
+pytesseract
 dotenv
 paddleocr

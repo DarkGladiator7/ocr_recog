@@ -18,7 +18,8 @@ def replace_text_with_translation(image, paragraphs, translated_texts):
 
             # Text properties
             font = cv2.FONT_HERSHEY_SIMPLEX
-            font_scale = 0.5
+            font_scale = max(0.5, min(h / 50, 1.0))
+            #font_scale = 0.5
             thickness = 2
             text_color = (0, 0, 0)
 
