@@ -1,11 +1,10 @@
-import json
-import requests
 import cv2
 import base64
-import numpy as np
+import json
+import requests
 
 def qwen_translate_to_english(cropped_image, text, user_prompt="Translate this text to English.", sys_prompt="Return only the translated text."):
-    """Translate extracted text to English using the Qwen API (with image input)."""
+    """Translate extracted text to English using the Qwen API, including the cropped image."""
     result = None
     success = False  
 
@@ -13,31 +12,33 @@ def qwen_translate_to_english(cropped_image, text, user_prompt="Translate this t
         url = "http://crmgpu5-10042.csez.zohocorpin.com:8781/qwen/inference"
         headers = {"Content-Type": "application/json"}
 
-        # Encode the image in Base64
+        # Encode Image to Base64
         _, buffer = cv2.imencode('.jpg', cropped_image)
-        img_base64 = base64.b64encode(buffer).decode()
+        image_base64 = base64.b64encode(buffer).decode('utf-8')
 
-        # Prepare API payload with text and image
-        payload = json.dumps({
+        payload = {
             "prompt": user_prompt,
+            "temperature": 0.000000001,
             "text": text,
-            "images": [img_base64],  # Send the image
+            "images": [image_base64],  # 🔥 Fix - Send image as List
             "system_prompt": sys_prompt
-        })
+        }
 
-        # Send request to Qwen API
-        response = requests.post(url, headers=headers, data=payload)
+        # Debug Payload
+        print("Payload:", json.dumps(payload))
 
+        # Send Request
+        response = requests.post(url, headers=headers, json=payload)
         print("Response Status:", response.status_code)
-        print("Response Text:", response.text)  # Debugging: Print full response
+        print("Response Text:", response.text)
 
         if response.status_code == 200:
             result = response.json().get("response", "").strip()
-            success = bool(result)  
+            success = bool(result)
         else:
             print(f"Qwen API Error: {response.status_code} - {response.text}")
 
     except Exception as e:
         print(f"Error during Qwen API call: {e}")
 
-    return result, success
+    return result if success else text

@@ -125,8 +125,10 @@ if uploaded_file:
                 if process_button:
                     translated_texts.append(translate_text(p))  # DeepL translation
                 elif process_qwen_button:
-                    translated_text, success = qwen_translate_to_english(p)
-                    translated_texts.append(translated_text if success else p)  # Fallback if API fails
+                    x, y, w, h = bbox
+                    cropped_image = image[y:y+h, x:x+w]
+                    translated_text = qwen_translate_to_english(cropped_image,p)  #
+                    translated_texts.append(translated_text)  # Fallback if API fails
             else:
                 translated_texts.append(p)  # Keep English text unchanged
 

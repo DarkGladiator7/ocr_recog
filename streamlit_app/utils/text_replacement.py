@@ -36,6 +36,6 @@ def replace_text_with_translation(image, paragraphs, translated_texts):
                 text_x = x
 
                 cv2.putText(new_image, line, (text_x, y_offset), font, font_scale, text_color, thickness)
-                y_offset += text_size[1] + 8  
+                y_offset += text_size[1] + 4
 
     return new_image
