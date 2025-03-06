@@ -1,5 +1,6 @@
 import statistics
-
+import deepl
+from langdetect import detect
 import cv2
 import pytesseract
 import numpy as np
@@ -211,6 +212,18 @@ class VisionLLM:
         print(f"Changes saved to: {changes_json_path}")
 
         return output_image_path, changes_json_path
+    
+    def deepl_translate_to_english(self, text):
+        translator = deepl.Translator("562f9148-f183-403d-846a-6fe013a8c118:fx")
+         # Translate only if not already English
+        try:
+            result = translator.translate_text(text, source_lang=None, target_lang="EN-US")
+            return result.text
+        except deepl.DeepLException as e:
+            print(f"DeepL Error: {e}")
+            return text  # Return original if translation fails
+        return text
+
 
     def calculate_font_scale_from_area(self, avg_char_area, font=cv2.FONT_HERSHEY_SIMPLEX, thickness=1):
         # Get reference size at scale 1.0 using a single character
