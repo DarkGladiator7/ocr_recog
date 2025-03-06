@@ -53,11 +53,14 @@ st.title("📄 OCR Image Translator")
 
 # Sample Images - Add your images to a specific directory
 sample_images = [
-    "arab.png",
+    "aeraa.jpg",
     "hin.jpg",
     "hung.png",
     "jap.png",
-    'par.jpeg'
+    'par.jpeg',
+    'fren.jpg',
+    'ara1.png',
+    'araee1.png'
 ]
 
 # Image Selection Dropdown
