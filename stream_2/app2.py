@@ -25,6 +25,8 @@ if "lang_detection_time" not in st.session_state:
     st.session_state.lang_detection_time = None  
 if "translation_time" not in st.session_state:
     st.session_state.translation_time = None  
+if "selected_translation" not in st.session_state:
+    st.session_state.selected_translation = None  
 
 # Title
 st.title("📄 OCR Image Translator")
@@ -41,6 +43,7 @@ if uploaded_file is not None:
     st.session_state.paragraphs.clear()
     st.session_state.lang_detection_time = None  
     st.session_state.translation_time = None  
+    st.session_state.selected_translation = None  # Reset translation method
 
     image = Image.open(uploaded_file)
     image_np = np.array(image)
@@ -83,24 +86,16 @@ if st.session_state.image_uploaded:
         st.write(f"⏳ **Language Detection Time:** {st.session_state.lang_detection_time} seconds")
 
 # **Translation Buttons**
-translate_qwen = False
-translate_google = False
 if st.session_state.image_uploaded:
     col1, col2 = st.columns(2)
     with col1:
         if st.button("📝 Translate with Qwen"):
-            translate_qwen = True
-            # Reset previous output
-            st.session_state.processed_image = None
-            st.session_state.translated_data = []
-            st.session_state.translation_time = None
+            st.session_state.selected_translation = "qwen"
+            st.session_state.processed_image = None  # Clear previous output
     with col2:
-        if st.button("🌍 Translate with Google Translate"):
-            translate_google = True
-            # Reset previous output
-            st.session_state.processed_image = None
-            st.session_state.translated_data = []
-            st.session_state.translation_time = None
+        if st.button("🌍 Translate with DeepL"):
+            st.session_state.selected_translation = "deepl"
+            st.session_state.processed_image = None  # Clear previous output
 
 # Display uploaded image (Left Side)
 if st.session_state.image_uploaded:
@@ -109,8 +104,8 @@ if st.session_state.image_uploaded:
         st.subheader("📷 Uploaded Image")
         st.image(st.session_state.image_path, caption="Original Image", use_container_width=True)
 
-    # Process Translation ONLY if a button is clicked
-    if translate_qwen or translate_google:
+    # Process Translation ONLY if a translation method is selected
+    if st.session_state.selected_translation:
         translated_data = []
         translated_texts = []
 
@@ -122,9 +117,9 @@ if st.session_state.image_uploaded:
             detected_lang = ocr_translator.qwen(cropped_image)  
 
             if detected_lang != "en":
-                if translate_qwen:
+                if st.session_state.selected_translation == "qwen":
                     translated_text = ocr_translator.qwen_translate_to_english(cropped_image, text)
-                elif translate_google:
+                elif st.session_state.selected_translation == "deepl":
                     translated_text = ocr_translator.deepl_translate_to_english(text)
             else:
                 translated_text = text
