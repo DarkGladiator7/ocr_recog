@@ -1,44 +1,41 @@
 import cv2
-from .text_wrapping import wrap_text_to_fit
+import numpy as np
+from utils.text_wrapping import wrap_text, calculate_font_scale_from_area
 
+def overlay_translated_text_on_image(paragraphs, translated_texts, original_image):
+    """Overlay translated text on the original image at the same positions."""
+    image_copy = original_image.copy()  # Preserve the original image
 
-def replace_text_with_translation(image, paragraphs, translated_texts):
-    """Replaces extracted paragraphs with translated text inside respective bounding boxes."""
-
-    if len(image.shape) == 2:  # Convert grayscale to BGR
-        image = cv2.cvtColor(image, cv2.COLOR_GRAY2BGR)
-
-    new_image = image.copy()
-
-    for i, (_, (x, y, w, h)) in enumerate(paragraphs):
+    for i, (_, (x, y, w, h), apc) in enumerate(paragraphs):
+        image_copy[y: y+h, x: x+w] = (255, 255, 255)  # White background for translated text
         if i < len(translated_texts):
             text = translated_texts[i].strip()
 
-            # Remove existing text
-            cv2.rectangle(new_image, (x, y), (x + w, y + h), (255, 255, 255), -1)
+            # Calculate the optimal font scale using character area
+            font_scale = calculate_font_scale_from_area(avg_char_area=apc)
 
-            # Text properties
-            font = cv2.FONT_HERSHEY_SIMPLEX
-            font_scale = max(0.5, min(h / 50, 1.0))
-            thickness = 2
-            text_color = (0, 0, 0)
+            image_copy = put_paragraph(image_copy, text, (x, y, w, h), font_scale)
 
-            # Wrap text to fit inside bounding box
-            wrapped_lines = wrap_text_to_fit(text, w - 10, font, font_scale, thickness)
+    return image_copy
+    
+def put_paragraph(image, text, bbox, init_fontscale=1, font=cv2.FONT_HERSHEY_SIMPLEX, thickness=2, color=(0, 0, 0)):
+    """Place wrapped text within a bounding box while ensuring it fits properly."""
+    x, y, box_w, box_h = bbox
+    font_scale = calculate_font_scale_from_area(avg_char_area=init_fontscale)
 
-            # Calculate total text height
-            line_height = cv2.getTextSize("A", font, font_scale, thickness)[0][1] + 5
-            total_text_height = len(wrapped_lines) * line_height
+    wrapped_lines = wrap_text(text, box_w, font_scale, font, thickness)
+    line_height = int(1.2 * cv2.getTextSize("A", font, font_scale, thickness)[0][1])
+    
+    cursor_y = y
+    for line in wrapped_lines:
+        text_size, baseline = cv2.getTextSize(line, font, font_scale, thickness)
+        text_x = x + (box_w - text_size[0]) // 2  # Center-align text
+        text_y = cursor_y + text_size[1]
 
-            # Adjust vertical positioning
-            y_offset = y + (h - total_text_height) // 2 + line_height
+        if text_y > y + box_h:
+            break  # Stop if text exceeds bounding box height
 
-            for line in wrapped_lines:
-                text_size = cv2.getTextSize(line, font, font_scale, thickness)[0]
-                text_x = x + (w - text_size[0]) // 2  # Center horizontally
+        cv2.putText(image, line, (text_x, text_y), font, font_scale, color, thickness)
+        cursor_y += line_height + baseline
 
-                cv2.putText(new_image, line, (text_x, y_offset), font, font_scale, text_color, thickness)
-                y_offset += line_height  # Move to next line
-
-    return new_image
-
+    return image

@@ -6,7 +6,7 @@ from utils.text_extraction import extract_paragraphs_with_bounding_boxes
 from utils.language_detection import detect_language
 from utils.text_translation import translate_text  # DeepL translation
 from utils.qwen_translate import qwen_translate_to_english  # Qwen translation
-from utils.text_replacement import replace_text_with_translation
+from utils.text_replacement import put_paragraph
 
 # **Modern Page Configuration**
 st.set_page_config(page_title="OCR Image Translator", layout="wide")
@@ -90,10 +90,10 @@ if uploaded_file:
         process_qwen_button = st.button("🧠 Translate using Qwen", key="process_qwen")
     st.markdown('</div>', unsafe_allow_html=True)
 
-   # **Process Image & Detect Languages**
+    # **Process Image & Detect Languages**
     preprocessed_image = preprocess_image(np.array(Image.open(uploaded_file)))
     paragraphs_with_boxes = extract_paragraphs_with_bounding_boxes(preprocessed_image)
-    detected_languages = {p: detect_language(p) for p, _ in paragraphs_with_boxes}
+    detected_languages = {p: detect_language(p) for p,_,_ in paragraphs_with_boxes}
 
     # **Check if any language other than English is found**
     non_english_languages = {lang for lang in detected_languages.values() if lang != "en"}
@@ -102,7 +102,6 @@ if uploaded_file:
     if non_english_languages:
         language_list = ", ".join(non_english_languages).upper()
         st.markdown(f'<div class="language-box"><b>🗣️ Detected Language(s):</b> {language_list}</div>', unsafe_allow_html=True)
-
 
 # **Images Display (Side by Side)**
 col_left, col_right = st.columns(2)
@@ -115,26 +114,28 @@ if uploaded_file:
     # Show Uploaded Image (Left)
     with col_left:
         st.markdown('<p class="image-header">📷 Uploaded Image</p>', unsafe_allow_html=True)
-        st.image(uploaded_file, use_container_width=True)
+        st.image(uploaded_file, use_column_width=True)
 
     # Process and Show Result (Right)
     if process_button or process_qwen_button:
         translated_texts = []
-        for p, bbox in paragraphs_with_boxes:
+        for p, bbox, _ in paragraphs_with_boxes:
             if detected_languages[p] != "en":
                 if process_button:
                     translated_texts.append(translate_text(p))  # DeepL translation
                 elif process_qwen_button:
                     x, y, w, h = bbox
                     cropped_image = image[y:y+h+10, x:x+w+10]
-                    translated_text = qwen_translate_to_english(cropped_image,p)  #
+                    translated_text = qwen_translate_to_english(cropped_image, p)
                     translated_texts.append(translated_text)  # Fallback if API fails
             else:
                 translated_texts.append(p)  # Keep English text unchanged
 
-        result = replace_text_with_translation(preprocessed_image, paragraphs_with_boxes, translated_texts)
-        processed_image = result[0] if isinstance(result, tuple) else result
+        processed_image = preprocessed_image.copy()
+        for (p, (x, y, w, h), _), translated_text in zip(paragraphs_with_boxes, translated_texts):
+            processed_image = put_paragraph(processed_image, (x, y, w, h), translated_text)
+        #processed_image = result[0] if isinstance(result, tuple) else result
 
         with col_right:
             st.markdown('<p class="image-header">✅ Processed Image</p>', unsafe_allow_html=True)
-            st.image(processed_image, channels="BGR", use_container_width=True)
+            st.image(processed_image, channels="BGR", use_column_width=True)

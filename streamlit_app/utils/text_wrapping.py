@@ -1,23 +1,35 @@
 import cv2
 
-def wrap_text_to_fit(text, max_width, font, font_scale, thickness):
-    """Splits text into multiple lines so it fits within a given width."""
+def calculate_font_scale_from_area(avg_char_area, font=cv2.FONT_HERSHEY_SIMPLEX, thickness=1):
+    """Calculate the optimal font scale based on the average character area."""
+    ref_text = "A"  # Use an uppercase letter as reference
+    ref_size = cv2.getTextSize(ref_text, font, 1.0, thickness)[0]
+
+    ref_char_width, ref_char_height = ref_size[0], ref_size[1]
+    ref_char_area = ref_char_width * ref_char_height  # Area at scale 1.0
+
+    # Calculate the optimal font scale using square root ratio
+    font_scale = (avg_char_area / ref_char_area) ** 0.5
+
+    return font_scale
+
+def wrap_text(text, max_width, font_scale, font=cv2.FONT_HERSHEY_SIMPLEX, thickness=1):
+    """Wrap text so it fits within the given max width."""
     words = text.split()
-    lines = []
-    current_line = ""
+    wrapped_lines = []
+    line = ""
 
     for word in words:
-        temp_line = f"{current_line} {word}".strip()
-        text_size = cv2.getTextSize(temp_line, font, font_scale, thickness)[0]
-
+        test_line = line + " " + word if line else word
+        text_size = cv2.getTextSize(test_line, font, font_scale, thickness)[0]
+        
         if text_size[0] <= max_width:
-            current_line = temp_line  # Add word to current line
+            line = test_line
         else:
-            if current_line:  
-                lines.append(current_line)  
-            current_line = word  # Start new line
+            wrapped_lines.append(line)
+            line = word
 
-    if current_line:
-        lines.append(current_line)
+    if line:
+        wrapped_lines.append(line)
 
-    return lines
+    return wrapped_lines
