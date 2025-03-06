@@ -9,28 +9,33 @@ import io
 # Set Streamlit page config
 st.set_page_config(layout="wide", page_title="OCR Image Translator")
 
+# Initialize session state variables if not already set
+if "image_uploaded" not in st.session_state:
+    st.session_state.image_uploaded = False
+if "processed_image" not in st.session_state:
+    st.session_state.processed_image = None
+if "detected_languages" not in st.session_state:
+    st.session_state.detected_languages = set()
+if "translated_data" not in st.session_state:
+    st.session_state.translated_data = []
+if "paragraphs" not in st.session_state:
+    st.session_state.paragraphs = []
+
 # Title of the app
 st.title("📄 OCR Image Translator")
 
 # Upload Image Button (Top)
 uploaded_file = st.file_uploader("Upload an Image", type=["jpg", "png", "jpeg"])
 
-# Initialize session state for storing processed data
-if "image_path" not in st.session_state:
-    st.session_state.image_path = None
-if "processed_image" not in st.session_state:
-    st.session_state.processed_image = None
-if "detected_languages" not in st.session_state:
-    st.session_state.detected_languages = set()
-if "translated_data" not in st.session_state:
-    st.session_state.translated_data = []  # Store translation results as JSON data
-if "paragraphs" not in st.session_state:
-    st.session_state.paragraphs = []
-if "image_uploaded" not in st.session_state:
-    st.session_state.image_uploaded = False  # Track if an image is uploaded
-
-# Process image when uploaded
+# Reset session state when a new image is uploaded
 if uploaded_file is not None:
+    st.session_state.image_uploaded = False  # Reset upload flag
+    st.session_state.processed_image = None  # Clear translated image
+    st.session_state.detected_languages.clear()  # Reset detected languages
+    st.session_state.translated_data.clear()  # Reset translation JSON data
+    st.session_state.paragraphs.clear()  # Reset extracted paragraphs
+
+    # Process new image
     image = Image.open(uploaded_file)
     image_np = np.array(image)
     image_path = "uploaded_image.jpg"
@@ -112,7 +117,7 @@ if st.session_state.image_uploaded:
 if st.session_state.processed_image is not None:
     # Display Processed Image (Right Side)
     with col2:
-        st.subheader("📷 Translated Image")
+        st.subheader("🖼 Translated Image")
         st.image(st.session_state.processed_image, caption="Translated Image", use_container_width=True)
 
     # **Download Processed Image**

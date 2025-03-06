@@ -82,7 +82,7 @@ class VisionLLM:
 
         return paragraphs
 
-    def extract_texts(self, image):
+    '''def extract_texts(self, image):
         custom_config = r'--oem 3 --psm 3'
         data = pytesseract.image_to_data(image, config=custom_config, output_type=pytesseract.Output.DICT)
         text_bboxes = []
@@ -91,7 +91,7 @@ class VisionLLM:
             if text:
                 x, y, w, h = data['left'][i], data['top'][i], data['width'][i], data['height'][i]
                 text_bboxes.append((text, (x, y, w, h)))
-        return text_bboxes
+        return text_bboxes'''
 
 
     def qwen(self, cropped, user_prompt="Identify the language of the text in this image.", sys_prompt="Return only the language code like 'en' for English, 'fr' for French.") -> str:
