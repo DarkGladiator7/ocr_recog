@@ -3,7 +3,7 @@ import base64
 import json
 import requests
 
-def qwen_translate_to_english(cropped_image, text, user_prompt="Translate this text to English.", sys_prompt="Return only the translated text."):
+def qwen_translate_to_english(cropped_image, text, user_prompt="Translate this text to English.", sys_prompt="Return english text along with the translated text if it is present."):
     """Translate extracted text to English using the Qwen API, including the cropped image."""
     result = None
     success = False  
