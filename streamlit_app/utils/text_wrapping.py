@@ -7,14 +7,15 @@ def wrap_text_to_fit(text, max_width, font, font_scale, thickness):
     current_line = ""
 
     for word in words:
-        temp_line = current_line + " " + word if current_line else word
+        temp_line = f"{current_line} {word}".strip()
         text_size = cv2.getTextSize(temp_line, font, font_scale, thickness)[0]
 
         if text_size[0] <= max_width:
-            current_line = temp_line  
+            current_line = temp_line  # Add word to current line
         else:
-            lines.append(current_line)  
-            current_line = word  
+            if current_line:  
+                lines.append(current_line)  
+            current_line = word  # Start new line
 
     if current_line:
         lines.append(current_line)

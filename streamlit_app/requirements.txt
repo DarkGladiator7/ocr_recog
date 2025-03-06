@@ -3,7 +3,6 @@ opencv-python-headless==4.5.5.64
 numpy
 pillow
 langdetect
-deepl
 pytesseract
 dotenv
-paddleocr
+googletrans==4.0.0-rc1
