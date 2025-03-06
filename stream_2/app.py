@@ -112,7 +112,7 @@ if st.session_state.image_uploaded:
 if st.session_state.processed_image is not None:
     # Display Processed Image (Right Side)
     with col2:
-        st.subheader("🖼 Translated Image")
+        st.subheader("📷 Translated Image")
         st.image(st.session_state.processed_image, caption="Translated Image", use_container_width=True)
 
     # **Download Processed Image**
