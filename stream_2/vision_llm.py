@@ -213,11 +213,11 @@ class VisionLLM:
 
         return output_image_path, changes_json_path
     
-    def deepl_translate_to_english(self, text):
+    def deepl_translate_to_english(self, text, source_lang1):
         translator = deepl.Translator("562f9148-f183-403d-846a-6fe013a8c118:fx")
          # Translate only if not already English
         try:
-            result = translator.translate_text(text, source_lang=None, target_lang="EN-US")
+            result = translator.translate_text(text, source_lang=source_lang1, target_lang="EN-US")
             return result.text
         except deepl.DeepLException as e:
             print(f"DeepL Error: {e}")

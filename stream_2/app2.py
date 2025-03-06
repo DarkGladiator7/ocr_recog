@@ -120,7 +120,7 @@ if st.session_state.image_uploaded:
                 if st.session_state.selected_translation == "qwen":
                     translated_text = ocr_translator.qwen_translate_to_english(cropped_image, text)
                 elif st.session_state.selected_translation == "deepl":
-                    translated_text = ocr_translator.deepl_translate_to_english(text)
+                    translated_text = ocr_translator.deepl_translate_to_english(text,detected_lang)
             else:
                 translated_text = text
 
@@ -158,24 +158,4 @@ if st.session_state.processed_image is not None:
     if st.session_state.translation_time is not None:
         st.write(f"⏳ **Translation Time:** {st.session_state.translation_time} seconds")
 
-    # **Download Processed Image**
-    processed_image_pil = Image.fromarray(st.session_state.processed_image)
-    img_buffer = io.BytesIO()
-    processed_image_pil.save(img_buffer, format="PNG")
-    img_bytes = img_buffer.getvalue()
-
-    st.download_button(
-        label="📥 Download Translated Image",
-        data=img_bytes,
-        file_name="translated_image.png",
-        mime="image/png"
-    )
-
-    # **Download JSON Output**
-    json_data = json.dumps(st.session_state.translated_data, indent=4, ensure_ascii=False).encode("utf-8")
-    st.download_button(
-        label="📥 Download JSON",
-        data=json_data,
-        file_name="translated_text.json",
-        mime="application/json"
-    )
+    
