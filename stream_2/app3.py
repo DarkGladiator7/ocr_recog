@@ -60,7 +60,8 @@ sample_images = [
     'par.jpeg',
     'fren.jpg',
     'ara1.png',
-    'araee1.png'
+    'araee1.png',
+    'araa.png'
 ]
 
 # Image Selection Dropdown
