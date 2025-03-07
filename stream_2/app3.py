@@ -35,12 +35,10 @@ sample_images = ["hin.jpg", "hung.png", "jap.png", 'chin.png', 'par.jpeg', 'fren
 # Google Lens Translated Images
 google_lens_images = {
     "hin.jpg": "lens_hin.jpg",
-    "hung.png": "google_hung.png",
-    "jap.png": "google_jap.png",
-    "chin.png": "google_chin.png",
-    "par.jpeg": "google_par.jpeg",
-    "fren.jpg": "google_fren.jpg",
-    "araa.png": "google_araa.png"
+    "jap.png": "lens_jap.png",
+    "par.jpeg": "lens_par.jpeg",
+    "fren.jpg": "lens_fre.jpg",
+    "araa.png": "lens_arab.JPG"
 }
 
 # ✅ Initialize session state variables if not already set
