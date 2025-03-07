@@ -30,14 +30,14 @@ LANGUAGE_MAPPING = {
 }
 
 # Sample images for selection
-sample_images = ["hin.jpg", "hung.png", "jap.png", 'chin.png', 'par.jpeg', 'fren.jpg', 'araa.png']
+sample_images = ["hin.jpg", "jap.png", 'par.jpeg', 'fren.jpg', 'araa.png']
 
 # Google Lens Translated Images
 google_lens_images = {
     "hin.jpg": "lens_hin.jpg",
-    "jap.png": "lens_jap.png",
-    "par.jpeg": "lens_par.jpeg",
-    "fren.jpg": "lens_fre.jpg",
+    "jap.png": "lens_jap.JPG",
+    "par.jpeg": "lens_par.JPG",
+    "fren.jpg": "lens_fre.JPG",
     "araa.png": "lens_arab.JPG"
 }
 

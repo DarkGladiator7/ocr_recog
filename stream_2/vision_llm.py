@@ -309,7 +309,7 @@ class VisionLLM:
         x, y, box_w, box_h = bbox
         font_scale = self.get_optimal_font_scale(
             text, (box_w, box_h), init_fontscale, font, thickness)  # Find best font scale
-        # font_scale = font_scale * 0.85
+        font_scale = font_scale * 0.75
         lines = self.wrap_text(text, box_w, font, font_scale, thickness)
 
         cursor_y = y
