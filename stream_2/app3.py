@@ -5,6 +5,7 @@ import json
 import time
 from vision_llm import VisionLLM  # Importing your class
 from PIL import Image
+from segmentation.paragraph_detector import extract_paragraphs
 import io
 
 # Set Streamlit page config
@@ -57,6 +58,7 @@ sample_images = [
     "hin.jpg",
     "hung.png",
     "jap.png",
+    'chin.png',
     'par.jpeg',
     'fren.jpg',
     'araa.png'
@@ -99,8 +101,9 @@ if selected_image != "Select an image":
     orig_image, _ = ocr_translator.preprocess_image(image_path)
 
     # Extract paragraphs
-    paragraphs = ocr_translator.extract_paragraphs_with_bounding_boxes(
-        orig_image)
+    text_bboxes = ocr_translator.extract_text(image)
+    paragraphs = extract_paragraphs(image, texts_b_boxes=text_bboxes)
+
 
     # **Start timer for language detection**
     start_time = time.time()

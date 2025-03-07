@@ -1,12 +1,13 @@
 import statistics
-import deepl
-from langdetect import detect
+from segmentation.paragraph_detector import extract_paragraphs
 import cv2
 import pytesseract
 import numpy as np
 import json
 import base64
+import deepl
 import requests
+
 
 class VisionLLM:
     def __init__(self, image_path):
@@ -26,7 +27,8 @@ class VisionLLM:
             return None, None
         gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
         blurred = cv2.GaussianBlur(gray, (5, 5), 0)
-        _, binary = cv2.threshold(blurred, 150, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+        _, binary = cv2.threshold(
+            blurred, 150, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
 
         print(f"Preprocessed image size: {image.shape}")
         return image, binary
@@ -35,17 +37,43 @@ class VisionLLM:
         apcs = []
         for bbox, text in zip(p_boxes, p_texts):
             w, h = bbox[2], bbox[3]
-            area = w *h
+            area = w * h
             text_len = len(text)
             avg_apc = area / text_len
             apcs.append(avg_apc)
         avg_apc = statistics.mean(apcs)
         return avg_apc
 
+    def extract_text(self, image):
+        custom_config = r'--oem 3 --psm 3'
+        data = pytesseract.image_to_data(
+            image, config=custom_config, output_type=pytesseract.Output.DICT)
+        text_bboxes = []
+        for i in range(len(data['text'])):
+            text = data['text'][i].strip()
+            if text:
+                x, y, w, h = data['left'][i], data['top'][i], data['width'][i], data['height'][i]
+                text_bboxes.append({'word': text, 'b_box': (x, y, x+w, y+h)})
+        return text_bboxes
+
+    def deepl_translate_to_english(self, text, source_lang1):
+        translator = deepl.Translator(
+            "562f9148-f183-403d-846a-6fe013a8c118:fx")
+        # Translate only if not already English
+        try:
+            result = translator.translate_text(
+                text, source_lang=source_lang1, target_lang="EN-US")
+            return result.text
+        except deepl.DeepLException as e:
+            print(f"DeepL Error: {e}")
+            return text  # Return original if translation fails
+        return text
+
     def extract_paragraphs_with_bounding_boxes(self, image):
         """Extract paragraphs and their bounding boxes."""
         custom_config = r'--oem 3 --psm 3'
-        data = pytesseract.image_to_data(image, config=custom_config, output_type=pytesseract.Output.DICT)
+        data = pytesseract.image_to_data(
+            image, config=custom_config, output_type=pytesseract.Output.DICT)
 
         paragraphs = []
         paragraph_text = []
@@ -63,8 +91,10 @@ class VisionLLM:
                         y_min = min([b[1] for b in paragraph_boxes])
                         x_max = max([b[0] + b[2] for b in paragraph_boxes])
                         y_max = max([b[1] + b[3] for b in paragraph_boxes])
-                        apc = self.find_apc(p_boxes=paragraph_boxes, p_texts=paragraph_text)
-                        paragraphs.append((" ".join(paragraph_text), (x_min, y_min, x_max - x_min, y_max - y_min), apc))
+                        apc = self.find_apc(
+                            p_boxes=paragraph_boxes, p_texts=paragraph_text)
+                        paragraphs.append(
+                            (" ".join(paragraph_text), (x_min, y_min, x_max - x_min, y_max - y_min), apc))
 
                     paragraph_text = []
                     paragraph_boxes = []
@@ -78,22 +108,24 @@ class VisionLLM:
             y_min = min([b[1] for b in paragraph_boxes])
             x_max = max([b[0] + b[2] for b in paragraph_boxes])
             y_max = max([b[1] + b[3] for b in paragraph_boxes])
-            apc = self.find_apc(p_boxes=paragraph_boxes, p_texts=paragraph_text)
-            paragraphs.append((" ".join(paragraph_text), (x_min, y_min, x_max - x_min, y_max - y_min), apc))
+            apc = self.find_apc(p_boxes=paragraph_boxes,
+                                p_texts=paragraph_text)
+            paragraphs.append(
+                (" ".join(paragraph_text), (x_min, y_min, x_max - x_min, y_max - y_min), apc))
 
         return paragraphs
 
-    '''def extract_texts(self, image):
+    def extract_texts(self, image):
         custom_config = r'--oem 3 --psm 3'
-        data = pytesseract.image_to_data(image, config=custom_config, output_type=pytesseract.Output.DICT)
+        data = pytesseract.image_to_data(
+            image, config=custom_config, output_type=pytesseract.Output.DICT)
         text_bboxes = []
         for i in range(len(data['text'])):
             text = data['text'][i].strip()
             if text:
                 x, y, w, h = data['left'][i], data['top'][i], data['width'][i], data['height'][i]
                 text_bboxes.append((text, (x, y, w, h)))
-        return text_bboxes'''
-
+        return text_bboxes
 
     def qwen(self, cropped, user_prompt="Identify the language of the text in this image.", sys_prompt="Return only the language code like 'en' for English, 'fr' for French.") -> str:
         """Detect the language of text in an image using the qwen API."""
@@ -165,8 +197,8 @@ class VisionLLM:
             if i < len(translated_texts):
                 text = translated_texts[i].strip()
 
-                # font_scale = 0.3
-                font_scale = self.calculate_font_scale_from_area(avg_char_area=apc)
+                font_scale = self.calculate_font_scale_from_area(
+                    avg_char_area=apc)
 
                 image_copy = self.put_paragraph(img=image_copy,
                                                 text=text,
@@ -179,11 +211,14 @@ class VisionLLM:
         """Detects language and translates only non-English text."""
         translated_texts = []
         for text, (x, y, w, h), _ in paragraphs:
-            cropped_image = original_image[y:y+h, x:x+w]  # Crop the image based on the bounding box
-            detected_lang = self.qwen(cropped_image)  # Detect the language using qwen
+            # Crop the image based on the bounding box
+            cropped_image = original_image[y:y+h, x:x+w]
+            # Detect the language using qwen
+            detected_lang = self.qwen(cropped_image)
             print(f"Detected language: {detected_lang}")
             if detected_lang != "en":
-                translated_text = self.qwen_translate_to_english(cropped_image, text)  # Translate using qwen
+                translated_text = self.qwen_translate_to_english(
+                    cropped_image, text)  # Translate using qwen
                 translated_texts.append(translated_text)
             else:
                 translated_texts.append(text)
@@ -197,7 +232,8 @@ class VisionLLM:
             return None, None
 
         # Overlay translated text
-        output_image = self.overlay_translated_text_on_image(paragraphs, translated_texts, original)
+        output_image = self.overlay_translated_text_on_image(
+            paragraphs, translated_texts, original)
 
         # Save the translated image
         output_image_path = "anas2.jpg"
@@ -206,24 +242,13 @@ class VisionLLM:
 
         # Save changes as a JSON file
         changes_json_path = "changes.json"
-        changes = [{"original": paragraphs[i][0], "translated": translated_texts[i]} for i in range(len(translated_texts))]
+        changes = [{"original": paragraphs[i][0], "translated": translated_texts[i]}
+                   for i in range(len(translated_texts))]
         with open(changes_json_path, "w", encoding="utf-8") as f:
             json.dump(changes, f, indent=4, ensure_ascii=False)
         print(f"Changes saved to: {changes_json_path}")
 
         return output_image_path, changes_json_path
-    
-    def deepl_translate_to_english(self, text, source_lang1):
-        translator = deepl.Translator("562f9148-f183-403d-846a-6fe013a8c118:fx")
-         # Translate only if not already English
-        try:
-            result = translator.translate_text(text, source_lang=source_lang1, target_lang="EN-US")
-            return result.text
-        except deepl.DeepLException as e:
-            print(f"DeepL Error: {e}")
-            return text  # Return original if translation fails
-        return text
-
 
     def calculate_font_scale_from_area(self, avg_char_area, font=cv2.FONT_HERSHEY_SIMPLEX, thickness=1):
         # Get reference size at scale 1.0 using a single character
@@ -243,15 +268,17 @@ class VisionLLM:
         box_w, box_h = bbox
 
         while font_scale > 0:
-            img = np.zeros((box_h, box_w, 3), dtype=np.uint8)  # Temporary image to test text fitting
-            wrapped_lines = self.wrap_text(text, box_w, font, font_scale, thickness)
+            # Temporary image to test text fitting
+            img = np.zeros((box_h, box_w, 3), dtype=np.uint8)
+            wrapped_lines = self.wrap_text(
+                text, box_w, font, font_scale, thickness)
             total_height = sum(
                 cv2.getTextSize(line, font, font_scale, thickness)[0][1] + 5 for line in wrapped_lines)  # Add spacing
 
             if total_height <= box_h:
                 return font_scale  # Found suitable font scale
 
-            font_scale -= 0.1  # Reduce font scale
+            font_scale -= 0.05  # Reduce font scale
 
         return 0.1  # Minimum font scale to prevent zero scaling
 
@@ -263,7 +290,8 @@ class VisionLLM:
 
         for word in words:
             test_line = line + " " + word if line else word
-            text_size, _ = cv2.getTextSize(test_line, font, font_scale, thickness)
+            text_size, _ = cv2.getTextSize(
+                test_line, font, font_scale, thickness)
 
             if text_size[0] <= box_w:
                 line = test_line  # Add word to current line
@@ -279,38 +307,56 @@ class VisionLLM:
     def put_paragraph(self, img, text, bbox, init_fontscale=1, font=cv2.FONT_HERSHEY_SIMPLEX, thickness=2):
 
         x, y, box_w, box_h = bbox
-        font_scale = self.get_optimal_font_scale(text, (box_w, box_h), init_fontscale, font, thickness)  # Find best font scale
+        font_scale = self.get_optimal_font_scale(
+            text, (box_w, box_h), init_fontscale, font, thickness)  # Find best font scale
+        # font_scale = font_scale * 0.85
         lines = self.wrap_text(text, box_w, font, font_scale, thickness)
 
         cursor_y = y
         for line in lines:
-            text_size, baseline = cv2.getTextSize(line, font, font_scale, thickness)
+            text_size, baseline = cv2.getTextSize(
+                line, font, font_scale, thickness)
             text_height = text_size[1]
 
             # Stop if exceeding bounding box height
             if cursor_y + text_height > y + box_h:
                 break
 
-            cv2.putText(img, line, (x, cursor_y + text_height), font, font_scale, (0, 0, 0), thickness)
+            cv2.putText(img, line, (x, cursor_y + text_height),
+                        font, font_scale, (0, 0, 0), thickness)
             cursor_y += text_height + baseline + 5  # Move cursor down with spacing
 
         return img
 
+# def draw_boxes(image, paragraphs_info):
+#     from PIL import Image
+#     boxes = [paragraph_info[1] for paragraph_info in paragraphs_info]
+#     for x1, y1, w, h in boxes:
+#         image = cv2.rectangle(image, (x1, y1), (x1+w, y1+h), (0, 0, 255), 2)
+#     Image.fromarray(image).show()
+
+
 # Example usage:
 def main():
-    image_path = "gerr.jpg"
+    image_path = "/Users/elavarasa-11656/Downloads/air-de-preview-1.jpeg"
     ocr_translator = VisionLLM(image_path)
 
     image, binary = ocr_translator.preprocess_image(image_path)
-    paragraphs = ocr_translator.extract_paragraphs_with_bounding_boxes(image)
+    # paragraphs = ocr_translator.extract_paragraphs_with_bounding_boxes(image)
+
+    text_bboxes = ocr_translator.extract_text(image)
+    paragraphs = extract_paragraphs(image, texts_b_boxes=text_bboxes)
+    # draw_boxes(image, paragraphs)
 
     # Detect and translate text
-    translated_texts = ocr_translator.detect_and_translate_text(paragraphs, image)
+    translated_texts = ocr_translator.detect_and_translate_text(
+        paragraphs, image)
 
     # Replace text with translation
-    output_image, changes_json = ocr_translator.replace_text_with_translation(image_path, paragraphs, translated_texts)
+    output_image, changes_json = ocr_translator.replace_text_with_translation(
+        image_path, paragraphs, translated_texts)
+
 
 if __name__ == '__main__':
     # Run the main function
     main()
-    
