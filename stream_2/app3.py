@@ -91,6 +91,7 @@ if input_method == "Select from Sample":
         st.session_state.image_path = f"sample_images/{selected_image}"
         st.session_state.show_google_lens = True  # Show Google Lens Image for verification
         st.session_state.image_uploaded = True
+    
 
 # 📤 Image Upload
 elif input_method == "Upload Image":
