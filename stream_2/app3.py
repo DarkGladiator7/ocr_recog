@@ -9,27 +9,15 @@ from segmentation.paragraph_detector import extract_paragraphs
 # Set Streamlit page config
 st.set_page_config(layout="wide", page_title="OCR Image Translator")
 
-# Language Code to Language Name Mapping
+# Language Mapping
 LANGUAGE_MAPPING = {
-    "en": "English",
-    "fr": "French",
-    "es": "Spanish",
-    "de": "German",
-    "zh": "Chinese",
-    "ja": "Japanese",
-    "ko": "Korean",
-    "hi": "Hindi",
-    "ar": "Arabic",
-    "ru": "Russian",
-    "it": "Italian",
-    "pt": "Portuguese",
-    "tr": "Turkish",
-    "nl": "Dutch",
-    "sv": "Swedish",
-    "hu": "Hungarian"
+    "en": "English", "fr": "French", "es": "Spanish", "de": "German",
+    "zh": "Chinese", "ja": "Japanese", "ko": "Korean", "hi": "Hindi",
+    "ar": "Arabic", "ru": "Russian", "it": "Italian", "pt": "Portuguese",
+    "tr": "Turkish", "nl": "Dutch", "sv": "Swedish", "hu": "Hungarian"
 }
 
-# Sample images for selection
+# Sample images
 sample_images = ["hin.jpg", "jap.png", 'par.jpeg', 'fren.jpg', 'araa.png']
 
 # Google Lens Translated Images
@@ -41,7 +29,7 @@ google_lens_images = {
     "araa.png": "lens_arab.JPG"
 }
 
-# ✅ Initialize session state variables if not already set
+# ✅ Initialize session state
 if "image_uploaded" not in st.session_state:
     st.session_state.image_uploaded = False
 if "input_mode" not in st.session_state:
@@ -52,14 +40,8 @@ if "processed_image" not in st.session_state:
     st.session_state.processed_image = None
 if "detected_languages" not in st.session_state:
     st.session_state.detected_languages = set()
-if "translated_data" not in st.session_state:
-    st.session_state.translated_data = []
 if "paragraphs" not in st.session_state:
     st.session_state.paragraphs = []
-if "lang_detection_time" not in st.session_state:
-    st.session_state.lang_detection_time = None
-if "translation_time" not in st.session_state:
-    st.session_state.translation_time = None
 if "image_path" not in st.session_state:
     st.session_state.image_path = None
 if "show_google_lens" not in st.session_state:
@@ -68,19 +50,18 @@ if "show_google_lens" not in st.session_state:
 # Title
 st.title("📄 OCR Image Translator")
 
-# Input Method Selection (Dropdown or Upload)
+# Input Method Selection
 input_method = st.radio("Choose Input Method", ["Select from Sample", "Upload Image"])
 
-# 🔄 Reset session state when switching input modes
+# 🔄 Reset session state when a new image is chosen
 if st.session_state.input_mode != input_method:
     st.session_state.image_uploaded = False
-    st.session_state.selected_translation = None
+    st.session_state.selected_translation = None  # 🔥 Reset translation choice
     st.session_state.processed_image = None
-    st.session_state.translated_data = []
-    st.session_state.lang_detection_time = None
-    st.session_state.translation_time = None
-    st.session_state.show_google_lens = False
+    st.session_state.detected_languages = set()
+    st.session_state.paragraphs = []
     st.session_state.image_path = None
+    st.session_state.show_google_lens = False
     st.session_state.input_mode = input_method  # Update input mode
 
 # 🎯 Image Selection (Dropdown)
@@ -89,16 +70,15 @@ if input_method == "Select from Sample":
 
     if selected_image != "Select an image":
         st.session_state.image_path = f"sample_images/{selected_image}"
-        st.session_state.show_google_lens = True  # Show Google Lens Image for verification
+        st.session_state.show_google_lens = True
         st.session_state.image_uploaded = True
-    
+        st.session_state.selected_translation = None  # 🔥 Ensure translation waits for user input
 
 # 📤 Image Upload
 elif input_method == "Upload Image":
     uploaded_file = st.file_uploader("Upload an Image", type=["png", "jpg", "jpeg"])
 
     if uploaded_file:
-        # Convert uploaded image to OpenCV format
         image = Image.open(uploaded_file)
         image_np = np.array(image)
         image_bgr = cv2.cvtColor(image_np, cv2.COLOR_RGB2BGR)
@@ -107,15 +87,13 @@ elif input_method == "Upload Image":
         st.session_state.image_path = "uploaded_image.jpg"
         cv2.imwrite(st.session_state.image_path, image_bgr)
 
-        # Uploaded images don't have Google Lens verification
         st.session_state.show_google_lens = False
         st.session_state.image_uploaded = True
+        st.session_state.selected_translation = None  # 🔥 Reset translation on new upload
 
-# 🖼️ Process Image after Selection/Upload
+# 🖼️ Process Image (only if image is selected/uploaded)
 if st.session_state.image_uploaded and st.session_state.image_path:
     image = Image.open(st.session_state.image_path)
-
-    # Initialize OCR object
     ocr_translator = VisionLLM(st.session_state.image_path)
 
     # Preprocess Image
@@ -125,9 +103,6 @@ if st.session_state.image_uploaded and st.session_state.image_path:
     text_bboxes = ocr_translator.extract_text(image)
     paragraphs = extract_paragraphs(image, texts_b_boxes=text_bboxes)
 
-    # 🕒 Start Language Detection Timer
-    start_time = time.time()
-
     # Detect language
     detected_languages = set()
     for text, (x, y, w, h), _ in paragraphs:
@@ -136,9 +111,6 @@ if st.session_state.image_uploaded and st.session_state.image_path:
         detected_lang_name = LANGUAGE_MAPPING.get(detected_lang_code, detected_lang_code)
         detected_languages.add(detected_lang_name)
 
-    # 🕒 End Language Detection Timer
-    st.session_state.lang_detection_time = round(time.time() - start_time, 2)
-
     # Update session state
     st.session_state.detected_languages = detected_languages
     st.session_state.paragraphs = paragraphs
@@ -146,9 +118,6 @@ if st.session_state.image_uploaded and st.session_state.image_path:
 # 🔍 Show Detected Language
 if st.session_state.image_uploaded:
     st.info(f"**Detected Language(s):** {', '.join(st.session_state.detected_languages) if st.session_state.detected_languages else 'N/A'}")
-
-    if st.session_state.lang_detection_time:
-        st.write(f"⏳ **Language Detection Time:** {st.session_state.lang_detection_time} seconds")
 
     # 🌍 Translation Buttons
     col1, col2 = st.columns(2)
@@ -171,11 +140,9 @@ if st.session_state.image_uploaded:
             st.subheader("📷 Google Lens Translation")
             st.image(f"google_lens_outputs/{google_lens_images[selected_image]}", caption="Google Lens Output", use_container_width=True)
 
-# ✅ Translation & Replace Text in Image
+# ✅ Translation & Replace Text in Image (ONLY after user clicks button)
 if st.session_state.selected_translation:
     translated_texts = []
-
-    start_time = time.time()
 
     for text, (x, y, w, h), _ in st.session_state.paragraphs:
         cropped_image = orig_image[y:y+h, x:x+w]
@@ -192,7 +159,7 @@ if st.session_state.selected_translation:
 
         translated_texts.append(translated_text)
 
-    # Replace text with translation in image
+    # Replace text in image
     output_image_path, _ = ocr_translator.replace_text_with_translation(
         st.session_state.image_path, st.session_state.paragraphs, translated_texts
     )
@@ -201,7 +168,7 @@ if st.session_state.selected_translation:
     processed_image = cv2.imread(output_image_path)
     processed_image = cv2.cvtColor(processed_image, cv2.COLOR_BGR2RGB)
 
-    # Store results in session state
+    # Store in session state
     st.session_state.processed_image = processed_image
 
 # ✅ Show Translated Image

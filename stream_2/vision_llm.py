@@ -57,17 +57,35 @@ class VisionLLM:
         return text_bboxes
 
     def deepl_translate_to_english(self, text, source_lang1):
-        translator = deepl.Translator(
-            "562f9148-f183-403d-846a-6fe013a8c118:fx")
-        # Translate only if not already English
+        url = "https://dl.localzoho.com/api/v2/nlp/translation/translate"
+
+        payload = json.dumps({
+            "text": {
+                "sentences": [text]
+            },
+            "source_language": source_lang1,
+            "target_language": "en",
+            "align": False
+        })
+        
+        headers = {
+            'Authorization': 'Zoho-oauthtoken 1000.8b19f7298906de404e064bb8209fed94.03f7df9e7d629a69216289b685473b3c',
+            'Content-Type': 'application/json'
+        }
+
         try:
-            result = translator.translate_text(
-                text, source_lang=source_lang1, target_lang="EN-US")
-            return result.text
-        except deepl.DeepLException as e:
-            print(f"DeepL Error: {e}")
-            return text  # Return original if translation fails
-        return text
+            response = requests.post(url, headers=headers, data=payload)
+            response_data = response.json()
+                        
+            if response.status_code == 200 and "sentences" in response_data.get("text", {}):
+                return response_data["text"]["sentences"][0]  # Return translated text
+            else:
+                print(f"Zoho API Error: {response_data}")
+                return text  # Return original if translation fails
+
+        except requests.exceptions.RequestException as e:
+            print(f"Request Error: {e}")
+            return text
 
     def extract_paragraphs_with_bounding_boxes(self, image):
         """Extract paragraphs and their bounding boxes."""
