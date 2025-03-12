@@ -125,7 +125,7 @@ if st.session_state.image_uploaded:
         if st.button("📝 Translate with Qwen"):
             st.session_state.selected_translation = "qwen"
     with col2:
-        if st.button("🌍 Translate with DeepL"):
+        if st.button("🌍 Translate with Zoho Translator"):
             st.session_state.selected_translation = "deepl"
 
 # 🖼️ Display Uploaded/Selected Image
@@ -152,13 +152,14 @@ if st.session_state.selected_translation:
             translated_text = (
                 ocr_translator.qwen_translate_to_english(cropped_image, text)
                 if st.session_state.selected_translation == "qwen"
-                else ocr_translator.deepl_translate_to_english(text, detected_lang_code)
+                else ocr_translator.zoho_translate_to_english(text, detected_lang_code)
             )
         else:
             translated_text = text
 
         translated_texts.append(translated_text)
-
+        
+        
     # Replace text in image
     output_image_path, _ = ocr_translator.replace_text_with_translation(
         st.session_state.image_path, st.session_state.paragraphs, translated_texts

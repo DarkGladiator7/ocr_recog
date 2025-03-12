@@ -45,7 +45,7 @@ class VisionLLM:
         return avg_apc
 
     def extract_text(self, image):
-        custom_config = r'--oem 3 --psm 3'
+        custom_config = r'--oem 3 --psm 6'
         data = pytesseract.image_to_data(
             image, config=custom_config, output_type=pytesseract.Output.DICT)
         text_bboxes = []
@@ -56,32 +56,33 @@ class VisionLLM:
                 text_bboxes.append({'word': text, 'b_box': (x, y, x+w, y+h)})
         return text_bboxes
 
-    def deepl_translate_to_english(self, text, source_lang1):
+    def zoho_translate_to_english(self, text, source_lang1):
         url = "https://dl.localzoho.com/api/v2/nlp/translation/translate"
 
         payload = json.dumps({
             "text": {
-                "sentences": [text]
+                "sentences":  [text]
             },
             "source_language": source_lang1,
             "target_language": "en",
             "align": False
         })
-        
+
         headers = {
-            'Authorization': 'Zoho-oauthtoken 1000.8b19f7298906de404e064bb8209fed94.03f7df9e7d629a69216289b685473b3c',
+            'Authorization': 'Zoho-oauthtoken 1000.6a94bae3464ab07d3af0c8f8edbd7f6f.05c2227c8697903fe78022856259aaaa',
             'Content-Type': 'application/json'
         }
 
         try:
             response = requests.post(url, headers=headers, data=payload)
             response_data = response.json()
-                        
-            if response.status_code == 200 and "sentences" in response_data.get("text", {}):
-                return response_data["text"]["sentences"][0]  # Return translated text
+
+            if response.status_code == 200 and "translation" in response_data:
+                # ✅ Corrected translation extraction
+                return response_data["translation"][0]["translate"]
             else:
                 print(f"Zoho API Error: {response_data}")
-                return text  # Return original if translation fails
+                return text  # Return original text if translation fails
 
         except requests.exceptions.RequestException as e:
             print(f"Request Error: {e}")
@@ -91,7 +92,7 @@ class VisionLLM:
         """Extract paragraphs and their bounding boxes."""
         custom_config = r'--oem 3 --psm 3'
         data = pytesseract.image_to_data(
-            image, config=custom_config, output_type=pytesseract.Output.DICT)
+            image, config=custom_config,lang='ger', output_type=pytesseract.Output.DICT)
 
         paragraphs = []
         paragraph_text = []
@@ -134,7 +135,7 @@ class VisionLLM:
         return paragraphs
 
     def extract_texts(self, image):
-        custom_config = r'--oem 3 --psm 3'
+        custom_config = r"--oem 3 --psm 3"
         data = pytesseract.image_to_data(
             image, config=custom_config, output_type=pytesseract.Output.DICT)
         text_bboxes = []
