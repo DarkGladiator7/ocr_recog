@@ -137,7 +137,7 @@ class VisionLLM:
         })
 
         headers = {
-            'Authorization': 'Zoho-oauthtoken 1000.a7a474d42e9ba89d77501ebe738c541b.986be26b6cdd6746d07af53f605d9fa4',
+            'Authorization': 'Zoho-oauthtoken 1000.c7098aa58ff6e4f10813d9f09c8647b7.5f5271fff8c34a28af8238868cad5faa',
             'Content-Type': 'application/json'
         }
 
